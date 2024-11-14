@@ -76,6 +76,15 @@ namespace CRUD.Controllers
             return Ok(result);
         }
 
+        //API 05
+
+        [HttpGet]
+        [Route("GetProductSummary")]
+        public async Task<IActionResult> GetGetProductSummary()
+        {
+            var result =await _IOrderRepo.GetProductSummary();
+            return Ok(result);
+        }
 
     }
 }

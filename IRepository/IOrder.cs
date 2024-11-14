@@ -15,5 +15,7 @@ namespace CRUD.IRepository
 
         Task<List<OrderDetailsDTO>> GetAllDetailsOrderWithProduct();
 
+        Task<List<ProductSummaryDTO>> GetProductSummary();
+
     }
 }

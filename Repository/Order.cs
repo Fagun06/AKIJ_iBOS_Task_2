@@ -219,6 +219,28 @@ namespace CRUD.Repository
                 throw;
             }
         }
-    
+
+        public async Task<List<ProductSummaryDTO>> GetProductSummary()
+        {
+            try
+            {
+                var ordersWithProducts = await(from order in _context.TblOrders
+
+                                               join product in _context.TblProducts on order.IntProductId equals product.IntProductId
+                                               group new { order, product } by new { product.StrProductName, product.NumUnitPrice } into gr
+                                               select new ProductSummaryDTO
+                                               {
+                                                   ProductName = gr.Key.StrProductName,
+                                                   TotalQuantityOrdered = gr.Sum(x => x.order.NumQuantity),
+                                                   TotalRevenue = gr.Sum(x => x.order.NumQuantity) * gr.Key.NumUnitPrice
+                                               }).ToListAsync();
+
+                return ordersWithProducts;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }
