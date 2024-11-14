@@ -109,8 +109,6 @@ namespace CRUD.Repository
         }
 
         //API 02
-       
-
         public async Task<MessageHelper> IncreaseQuantityOrder(int Orderid, int Quantity)
         {
 
@@ -242,5 +240,141 @@ namespace CRUD.Repository
                 throw;
             }
         }
+
+        public async Task<List<ProductDTO>> GetProductsBelowQuantity(decimal quantity)
+        {
+            try
+            {
+                var lowStockProducts = await _context.TblProducts
+               .Where(product => product.NumStock < quantity)
+               .Select(product => new ProductDTO
+               {
+                   ProductName = product.StrProductName,
+                   Price = product.NumUnitPrice,
+                   Stock = product.NumStock
+               })
+               .ToListAsync();
+
+                if (!lowStockProducts.Any())
+                {
+                    throw new Exception("No products found below the specified quantity.");
+                }
+
+                return lowStockProducts;
+            }
+            catch 
+            {
+                throw new Exception("No products found below the specified quantity.");
+            }
+        }
+
+        public async Task<List<Top3CustomersDTO>> GetTop3CustomersByQuantity()
+        {
+            try
+            {
+                var topCustomers = await _context.TblOrders
+                                                .Where(order => order.IsActive)
+                                                .GroupBy(order => order.StrCustomerName)
+                                                .OrderByDescending(group => group.Sum(order => order.NumQuantity))
+                                                .Take(3)
+                                                .Select(group => new Top3CustomersDTO
+                                                {
+                                                    CustomerName = group.FirstOrDefault().StrCustomerName,
+                                                    TotalQuantityOrdered = group.Sum(order => order.NumQuantity)
+                                                })
+                                                .ToListAsync();
+                if (!topCustomers.Any())
+                {
+                    throw new Exception("No Customer is found");
+                }
+
+                return topCustomers;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        //API 5
+        public async Task<List<string>> GetUnorderedProducts()
+        {
+            try
+            {
+                var unorderedProducts = await _context.TblProducts.Where(product => !_context.TblOrders
+                                                                  .Any(order => order.IntProductId == product.IntProductId && order.IsActive == true))
+                                                                  .Select(product => product.StrProductName)
+                                                                  .ToListAsync();
+                if (!unorderedProducts.Any())
+                {
+                    throw new Exception("No Unordered Product found");
+                }
+
+                return unorderedProducts;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        //API 6
+        public async Task<MessageHelper> CreateBulkOrders(List<OrderDTO> orders)
+        {
+            using var transcation = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var newList = new List<TblOrder>(orders.Count());
+
+                foreach (var order in orders)
+                {
+                    var product = await _context.TblProducts.FirstOrDefaultAsync(p => p.StrProductName == order.ProductName);
+
+                    if (product == null)
+                    {
+                        throw new Exception(order.ProductName + " Not Found. So, Rolled Back");
+                    }
+
+                    if (product.NumStock < order.Quntity)
+                    {
+                        throw new Exception(order.ProductName + " is Insufficient Stock. So, Rolled Back");
+                    }
+                    product.NumStock -= order.Quntity;
+
+                    var obj = new TblOrder
+                    {
+                        StrCustomerName = order.CustomerName,
+                        IntProductId = product.IntProductId,
+                        NumQuantity = order.Quntity,
+                        DtOrderDate = DateTime.Now,
+                        IsActive = true,
+                        DtLastActiveDateTime = DateTime.Now
+                    };
+                    newList.Add(obj);
+                }
+
+                await _context.AddRangeAsync(newList);
+                await _context.SaveChangesAsync();
+                await transcation.CommitAsync();
+
+                return new MessageHelper
+                {
+                    message = "Bulk orders created successfully.",
+                    statusCode = 200
+                };
+
+            }
+            catch(Exception) 
+            {
+                await transcation.RollbackAsync();
+                throw;
+            }
+
+        }
     }
+
+   
+       
+
+
+    
 }

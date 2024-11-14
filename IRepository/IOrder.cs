@@ -17,5 +17,11 @@ namespace CRUD.IRepository
 
         Task<List<ProductSummaryDTO>> GetProductSummary();
 
+        Task<List<ProductDTO>> GetProductsBelowQuantity(decimal quantity);
+        Task<List<Top3CustomersDTO>> GetTop3CustomersByQuantity();
+        Task<List<string>> GetUnorderedProducts();
+
+        Task<MessageHelper> CreateBulkOrders(List<OrderDTO>orders);
+
     }
 }

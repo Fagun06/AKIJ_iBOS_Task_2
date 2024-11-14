@@ -85,6 +85,50 @@ namespace CRUD.Controllers
             var result =await _IOrderRepo.GetProductSummary();
             return Ok(result);
         }
+        //API 06
+
+        [HttpGet]
+
+        [Route("GetProductsBelowQuantity")]
+
+        public async Task<IActionResult> GetProductsBelowQuantity(decimal quantity)
+        {
+            var result = await _IOrderRepo.GetProductsBelowQuantity(quantity);
+
+            return Ok(result);
+        }
+        //API 7
+        [HttpGet]
+        [Route("GetTop3CustomersByQuantity")]
+
+        public async Task<IActionResult> GetTop3CustomersByQuantity()
+        {
+            var result = await _IOrderRepo.GetTop3CustomersByQuantity();
+
+            return Ok(result);
+        }
+
+        //API 8
+        [HttpGet]
+
+        [Route("GetUnorderedProducts")]
+
+        public async Task<IActionResult> GetUnorderedProducts()
+        {
+            var result = await _IOrderRepo.GetUnorderedProducts();
+
+            return Ok(result);
+        }
+        //API 9
+        [HttpPost]
+
+        [Route("CreateBulkOrders")]
+
+        public async Task<IActionResult> CreateBulkOrders(List<OrderDTO> orders)
+        {
+            var result = await _IOrderRepo.CreateBulkOrders(orders);
+            return Ok(result);
+        }
 
     }
 }
