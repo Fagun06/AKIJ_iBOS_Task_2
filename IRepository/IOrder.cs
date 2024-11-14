@@ -5,10 +5,15 @@ namespace CRUD.IRepository
 {
     public interface IOrder
     {
-        Task<MassageHelper> CreateProduct(ProductDTO product);
+        Task<MessageHelper> CreateProduct(ProductDTO product);
 
-        Task<MassageHelper> CreateOrder(OrderDTO order);
+        Task<MessageHelper> CreateOrder(OrderDTO order);
 
-        
+        Task<MessageHelper> IncreaseQuantityOrder(int Orderid, int Quantity);
+
+        Task<MessageHelper> DeleteOrder(int OrderId);
+
+        Task<List<OrderDetailsDTO>> GetAllDetailsOrderWithProduct();
+
     }
 }
