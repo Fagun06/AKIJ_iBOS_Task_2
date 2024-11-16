@@ -319,6 +319,9 @@ namespace CRUD.Repository
         //API 6
         public async Task<MessageHelper> CreateBulkOrders(List<OrderDTO> orders)
         {
+
+            var lista = orders.Select(n => n.ProductName).ToList();
+            var productlist = await _context.TblProducts.Where(p => lista.Contains( p.StrProductName)).ToListAsync();
             using var transcation = await _context.Database.BeginTransactionAsync();
 
             try
@@ -327,7 +330,7 @@ namespace CRUD.Repository
 
                 foreach (var order in orders)
                 {
-                    var product = await _context.TblProducts.FirstOrDefaultAsync(p => p.StrProductName == order.ProductName);
+                    var product = productlist.FirstOrDefault(p => p.StrProductName == order.ProductName);
 
                     if (product == null)
                     {
