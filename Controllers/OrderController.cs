@@ -130,5 +130,15 @@ namespace CRUD.Controllers
             return Ok(result);
         }
 
+        //API 10
+        [HttpGet]
+        [Route("GetAllProduct")]
+        public async Task<List<ProductDTO>> GetAllProduct()
+        {
+            var result = await _IOrderRepo.GetAllProduct();
+            return result;
+        }
+
+
     }
 }

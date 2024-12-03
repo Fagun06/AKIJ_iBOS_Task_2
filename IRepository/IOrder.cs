@@ -23,5 +23,7 @@ namespace CRUD.IRepository
 
         Task<MessageHelper> CreateBulkOrders(List<OrderDTO>orders);
 
+        Task<List<ProductDTO>> GetAllProduct();
+
     }
 }

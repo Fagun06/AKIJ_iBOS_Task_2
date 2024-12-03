@@ -439,6 +439,26 @@ namespace CRUD.Repository
             }
         }
 
+        //API 10 using store procedure
+
+        public async Task<List<ProductDTO>> GetAllProduct()
+        {
+
+            var result = await _context.TblProducts.FromSqlRaw<TblProduct>("spGetAllProduct").ToListAsync();
+           
+            var products = result.Select(p => new ProductDTO
+            {
+                ProductName = p.StrProductName,                
+                Stock = p.NumStock,          
+                Price = p.NumUnitPrice,         
+                                         
+            }).ToList();
+
+            return products;
+           
+        }
+
+
     }
 
 
