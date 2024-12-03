@@ -6,6 +6,7 @@ using CRUD.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Transactions;
 
 namespace CRUD.Repository
 {
@@ -217,7 +218,7 @@ namespace CRUD.Repository
                 throw;
             }
         }
-
+        //API 5
         public async Task<List<ProductSummaryDTO>> GetProductSummary()
         {
             try
@@ -240,7 +241,7 @@ namespace CRUD.Repository
                 throw;
             }
         }
-
+        //API 6
         public async Task<List<ProductDTO>> GetProductsBelowQuantity(decimal quantity)
         {
             try
@@ -267,7 +268,7 @@ namespace CRUD.Repository
                 throw new Exception("No products found below the specified quantity.");
             }
         }
-
+        //API 7
         public async Task<List<Top3CustomersDTO>> GetTop3CustomersByQuantity()
         {
             try
@@ -295,7 +296,7 @@ namespace CRUD.Repository
                 throw;
             }
         }
-        //API 5
+        //API 8
         public async Task<List<string>> GetUnorderedProducts()
         {
             try
@@ -316,68 +317,133 @@ namespace CRUD.Repository
                 throw;
             }
         }
-        //API 6
+       //API 9
+
+        //using transcation
+        //public async Task<MessageHelper> CreateBulkOrders(List<OrderDTO> orders)
+        //{
+
+        //    var lista = orders.Select(n => n.ProductName).ToList();
+        //    var productlist = await _context.TblProducts.Where(p => lista.Contains( p.StrProductName)).ToListAsync();
+        //    using var transcation = await _context.Database.BeginTransactionAsync();
+
+        //    try
+        //    {
+        //        var newList = new List<TblOrder>(orders.Count());
+
+        //        foreach (var order in orders)
+        //        {
+        //            var product = productlist.FirstOrDefault(p => p.StrProductName == order.ProductName);
+
+        //            if (product == null)
+        //            {
+        //                throw new Exception(order.ProductName + " Not Found. So, Rolled Back");
+        //            }
+
+        //            if (product.NumStock < order.Quntity)
+        //            {
+        //                throw new Exception(order.ProductName + " is Insufficient Stock. So, Rolled Back");
+        //            }
+        //            product.NumStock -= order.Quntity;
+
+        //            var obj = new TblOrder
+        //            {
+        //                StrCustomerName = order.CustomerName,
+        //                IntProductId = product.IntProductId,
+        //                NumQuantity = order.Quntity,
+        //                DtOrderDate = DateTime.Now,
+        //                IsActive = true,
+        //                DtLastActiveDateTime = DateTime.Now
+        //            };
+        //            newList.Add(obj);
+        //        }
+
+        //        await _context.AddRangeAsync(newList);
+        //        await _context.SaveChangesAsync();
+        //        await transcation.CommitAsync();
+
+        //        return new MessageHelper
+        //        {
+        //            message = "Bulk orders created successfully.",
+        //            statusCode = 200
+        //        };
+
+        //    }
+        //    catch(Exception) 
+        //    {
+        //        await transcation.RollbackAsync();
+        //        throw;
+        //    }
+
+        //}
+
+        //using TransationScop
+
         public async Task<MessageHelper> CreateBulkOrders(List<OrderDTO> orders)
         {
-
             var lista = orders.Select(n => n.ProductName).ToList();
-            var productlist = await _context.TblProducts.Where(p => lista.Contains( p.StrProductName)).ToListAsync();
-            using var transcation = await _context.Database.BeginTransactionAsync();
+            var productlist = await _context.TblProducts.Where(p => lista.Contains(p.StrProductName)).ToListAsync();
 
-            try
+            // Using TransactionScope to handle the transaction
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-                var newList = new List<TblOrder>(orders.Count());
-
-                foreach (var order in orders)
+                try
                 {
-                    var product = productlist.FirstOrDefault(p => p.StrProductName == order.ProductName);
+                    var newList = new List<TblOrder>(orders.Count());
 
-                    if (product == null)
+                    foreach (var order in orders)
                     {
-                        throw new Exception(order.ProductName + " Not Found. So, Rolled Back");
+                        var product = productlist.FirstOrDefault(p => p.StrProductName == order.ProductName);
+
+                        if (product == null)
+                        {
+                            throw new Exception(order.ProductName + " Not Found. So, Rolled Back");
+                        }
+
+                        if (product.NumStock < order.Quntity)
+                        {
+                            throw new Exception(order.ProductName + " is Insufficient Stock. So, Rolled Back");
+                        }
+
+                        product.NumStock -= order.Quntity;
+
+                        var obj = new TblOrder
+                        {
+                            StrCustomerName = order.CustomerName,
+                            IntProductId = product.IntProductId,
+                            NumQuantity = order.Quntity,
+                            DtOrderDate = DateTime.Now,
+                            IsActive = true,
+                            DtLastActiveDateTime = DateTime.Now
+                        };
+                        newList.Add(obj);
                     }
 
-                    if (product.NumStock < order.Quntity)
-                    {
-                        throw new Exception(order.ProductName + " is Insufficient Stock. So, Rolled Back");
-                    }
-                    product.NumStock -= order.Quntity;
+                    await _context.AddRangeAsync(newList);
+                    await _context.SaveChangesAsync();
 
-                    var obj = new TblOrder
+                    // Committing the transaction automatically at the end of the scope
+                    transactionScope.Complete();
+
+                    return new MessageHelper
                     {
-                        StrCustomerName = order.CustomerName,
-                        IntProductId = product.IntProductId,
-                        NumQuantity = order.Quntity,
-                        DtOrderDate = DateTime.Now,
-                        IsActive = true,
-                        DtLastActiveDateTime = DateTime.Now
+                        message = "Bulk orders created successfully.",
+                        statusCode = 200
                     };
-                    newList.Add(obj);
                 }
-
-                await _context.AddRangeAsync(newList);
-                await _context.SaveChangesAsync();
-                await transcation.CommitAsync();
-
-                return new MessageHelper
+                catch (Exception)
                 {
-                    message = "Bulk orders created successfully.",
-                    statusCode = 200
-                };
-
+                    // Transaction will be rolled back automatically on exception
+                    throw;
+                }
             }
-            catch(Exception) 
-            {
-                await transcation.RollbackAsync();
-                throw;
-            }
-
         }
+
     }
 
-   
-       
 
 
-    
+
+
+
 }
